@@ -172,7 +172,7 @@ int parseline(const char *cmdline, char **argv)
     char *buf = array;          /* 遍历命令行的指针 */
     char *delim;                /* 指向第一个空格分隔符 */
     int argc;                   /* 参数数量 */
-    int bg;                     /* 后台作业？ */
+    int bg;                     /* 后台作业 */
 
     strcpy(buf, cmdline);
     buf[strlen(buf)-1] = ' ';  /* 将尾随的'\n'替换为空格 */
