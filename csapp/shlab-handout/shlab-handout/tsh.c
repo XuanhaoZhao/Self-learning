@@ -56,13 +56,13 @@ struct job_t jobs[MAXJOBS]; /* 作业列表 */
 
 /* 这里是你将要实现的函数 */
 void eval(char *cmdline);
-int builtin_cmd(char **argv);
-void do_bgfg(char **argv);
-void waitfg(pid_t pid);
+int builtin_cmd(char **argv); // 已实现
+void do_bgfg(char **argv); // 主要工作量
+void waitfg(pid_t pid); // 阻塞当前进程直到前台作业完成
 
-void sigchld_handler(int sig);
-void sigtstp_handler(int sig);
-void sigint_handler(int sig);
+void sigchld_handler(int sig); //  主要工作量
+void sigtstp_handler(int sig); // 还行
+void sigint_handler(int sig); // 还行
 
 /* 这里是我们为你提供的辅助程序 */
 int parseline(const char *cmdline, char **argv);
@@ -158,6 +158,24 @@ int main(int argc, char **argv)
  */
 void eval(char *cmdline)
 {
+    char *argv[MAXARGS];  // 参数数组
+    int bg;
+    pid_t pid;
+    
+    
+    
+    bg = parseline(cmdline, argv);// 解析命令行
+    if (cmdline == NULL || cmdline[0] == '\0') {
+        return;
+    }
+    if (argv[0] == NULL) {
+        return;  // 空命令行
+    }
+    
+    if (builtin_cmd(argv)) {
+        return;
+    }
+    
     return;
 }
 
@@ -221,6 +239,17 @@ int parseline(const char *cmdline, char **argv)
  */
 int builtin_cmd(char **argv)
 {
+    if (strcmp(argv[0], "quit") == 0) {
+        // printf("shell quit!\n");
+        exit(0);  // 退出 shell
+    }
+    // 处理其他内置命令，例如 jobs, bg, fg
+    else if (strcmp(argv[0], "jobs") == 0) {
+        listjobs(jobs);  // 显示作业列表
+        return 1;
+    }
+    // 初始化信号，创建子进程，管理子进程和父进程
+    
     return 0;     /* 不是一个内置命令 */
 }
 
