@@ -165,17 +165,37 @@ void eval(char *cmdline)
     
     
     bg = parseline(cmdline, argv);// 解析命令行
-    if (cmdline == NULL || cmdline[0] == '\0') {
-        return;
-    }
     if (argv[0] == NULL) {
         return;  // 空命令行
     }
-    
-    if (builtin_cmd(argv)) {
+    if (cmdline == NULL || cmdline[0] == '\0') {
         return;
     }
     
+    if (builtin_cmd(argv)) {
+        return;// 内置命令直接执行
+    }
+    pid = fork();
+    if(pid < 0){
+        perror("fork error");
+        return;
+        }
+    else if(pid > 0){// 父进程
+        if(!bg){
+        // addjob
+        addjob(jobs,pid,FG,cmdline);
+        waitfg(pid);// 阻塞父进程等待前台作业完成
+        }else{
+        addjob(jobs,pid,BG,cmdline);// 添加后台作业
+        printf("[%d] (%d) %s\n", pid2jid(pid), pid, cmdline);
+        }
+        }else{// 子进程
+        setpgid(0,0);
+        if (execvp(argv[0], argv) < 0) { // 执行命令
+        fprintf(stderr, "%s: Command not found.\n", argv[0]);
+        exit(1);
+        }
+    }
     return;
 }
 
@@ -238,7 +258,7 @@ int parseline(const char *cmdline, char **argv)
  * builtin_cmd - 如果用户输入了一个内置命令，则立即执行它。
  */
 int builtin_cmd(char **argv)
-{
+{ // 完成
     if (strcmp(argv[0], "quit") == 0) {
         // printf("shell quit!\n");
         exit(0);  // 退出 shell
@@ -247,6 +267,11 @@ int builtin_cmd(char **argv)
     else if (strcmp(argv[0], "jobs") == 0) {
         listjobs(jobs);  // 显示作业列表
         return 1;
+    }else if(strcmp(argv[0], "bg") == 0 || strcmp(argv[0], "fg") == 0){
+        do_bgfg(argv);
+        return;
+    }else{// 不存在的命令
+
     }
     // 初始化信号，创建子进程，管理子进程和父进程
     
