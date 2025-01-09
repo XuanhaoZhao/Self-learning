@@ -335,6 +335,31 @@ void waitfg(pid_t pid)
  */
 void sigchld_handler(int sig)
 {
+    // 保存和恢复errno确保信号处理函数不会干扰其他代码逻辑
+    int olderrno = errno; // 保护 errno
+    pid_t pid;
+    int status;
+
+    while (pid = waitpid(-1, &status, WNOHANG | WUNTRACED))
+    {// 回收子进程
+        if(WIFEXITED(status)){// 正常退出，删除作业
+        deletejob(jobs,pid)
+        }else if (WIFSIGNALED(status))
+        {// 信号种植，打印信息并删除作业
+             printf("Job [%d] (%d) terminated by signal %d\n", pid2jid(pid), pid, WTERMSIG(status));
+             deletejob(jobs,pid);
+        }else if(WIFSTOPPED(status)){
+            // 信号暂停，更新作业状态
+             struct job_t *job = getjobpid(jobs, pid);
+             if(job){
+                job->state = ST;// 暂停
+                printf("Job [%d] (%d) stopped by signal %d\n", job->jid, pid, WSTOPSIG(status));
+             }
+        }
+        
+    }
+    
+    errno = olderrno;
     return;
 }
 
